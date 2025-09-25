@@ -28,6 +28,13 @@ export default function CreateGame({ onCreated }) {
       const result = await registerGame({ size, distribution, timelimit, key });
       setGameId(String(result?.id || ""));
       setPassword(String(result?.password || ""));
+      try {
+        window.localStorage.setItem(
+          "mazeGame",
+          JSON.stringify({ id: result?.id, password: result?.password })
+        );
+        window.dispatchEvent(new Event("maze:game-updated"));
+      } catch {}
       if (onCreated && result?.id && result?.password) onCreated(result);
     } catch (err) {
       setErrorMessage(err?.message || "Failed to create game");

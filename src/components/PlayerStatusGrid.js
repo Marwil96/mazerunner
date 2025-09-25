@@ -15,13 +15,29 @@ export default function PlayerStatusGrid() {
   const [isRunning, setIsRunning] = useState(false);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("mazePlayer");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.token) setToken(String(parsed.token));
-      }
-    } catch {}
+    const load = () => {
+      try {
+        const saved = window.localStorage.getItem("mazePlayer");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed?.token) setToken(String(parsed.token));
+        }
+        const gameSaved = window.localStorage.getItem("mazeGame");
+        if (gameSaved) {
+          const parsedGame = JSON.parse(gameSaved);
+          if (parsedGame?.id) setGameId(String(parsedGame.id));
+        }
+      } catch {}
+    };
+    load();
+    const onPlayer = () => load();
+    const onGame = () => load();
+    window.addEventListener("maze:player-updated", onPlayer);
+    window.addEventListener("maze:game-updated", onGame);
+    return () => {
+      window.removeEventListener("maze:player-updated", onPlayer);
+      window.removeEventListener("maze:game-updated", onGame);
+    };
   }, []);
 
   useEffect(() => {
@@ -58,7 +74,15 @@ export default function PlayerStatusGrid() {
   }, [isRunning, gameId, token]);
 
   const grid = useMemo(() => {
-    return Array.isArray(status?.maze) ? status.maze : null;
+    const raw = Array.isArray(status?.maze) ? status.maze : null;
+    if (!raw || !Array.isArray(raw[0])) return raw;
+    const height = raw.length;
+    const width = raw[0].length;
+    // Rotate 90° counterclockwise so north maps to up visually
+    const rotated = Array.from({ length: width }, (_, r) =>
+      Array.from({ length: height }, (_, c) => raw[c][width - 1 - r])
+    );
+    return rotated;
   }, [status]);
 
   const colorForTile = (value) => {

@@ -9,13 +9,29 @@ export default function PlayerControls() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("mazePlayer");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.token) setToken(String(parsed.token));
-      }
-    } catch {}
+    const load = () => {
+      try {
+        const saved = window.localStorage.getItem("mazePlayer");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed?.token) setToken(String(parsed.token));
+        }
+        const gameSaved = window.localStorage.getItem("mazeGame");
+        if (gameSaved) {
+          const parsed = JSON.parse(gameSaved);
+          if (parsed?.id) setGameId(String(parsed.id));
+        }
+      } catch {}
+    };
+    load();
+    const onPlayer = () => load();
+    const onGame = () => load();
+    window.addEventListener("maze:player-updated", onPlayer);
+    window.addEventListener("maze:game-updated", onGame);
+    return () => {
+      window.removeEventListener("maze:player-updated", onPlayer);
+      window.removeEventListener("maze:game-updated", onGame);
+    };
   }, []);
 
   const withReq = async (path, init) => {
@@ -31,8 +47,15 @@ export default function PlayerControls() {
             init?.method === "POST" ? "application/json" : undefined,
         },
       });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || "Action failed");
+      const text = await res.text();
+      let data = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch (_) {}
+      if (!res.ok)
+        throw new Error(
+          (data && (data.error || data.message)) || text || "Action failed"
+        );
       setMessage("Success");
       return data;
     } catch (err) {

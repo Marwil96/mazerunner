@@ -14,6 +14,16 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "Missing Authorization header" });
   if (!direction) return res.status(400).json({ error: "Missing direction" });
 
+  // Normalize and validate direction against allowed values
+  const normalizedDirection = String(direction).trim().toLowerCase();
+  const allowed = new Set(["north", "south", "west", "east"]);
+  if (!allowed.has(normalizedDirection)) {
+    return res.status(400).json({
+      error: "Invalid direction",
+      details: { allowed: Array.from(allowed) },
+    });
+  }
+
   try {
     const baseUrl = "https://try-maze-runner.up.railway.app/api/v1";
     const endpoint = `${baseUrl}/game/${encodeURIComponent(
@@ -26,14 +36,22 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
         Authorization: authHeader,
       },
-      body: JSON.stringify({ direction }),
+      body: JSON.stringify({ direction: normalizedDirection }),
     });
-    const data = await upstream.json().catch(() => null);
+    const text = await upstream.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (_) {}
     if (!upstream.ok) {
+      const message =
+        (data && (data.error || data.message)) || text || "Move failed";
       return res
         .status(upstream.status || 500)
-        .json({ error: data?.error || "Move failed", details: data });
+        .json({ error: message, details: data || text });
     }
+    if (!text) return res.status(200).json({ ok: true });
+    data = data || {};
     return res.status(200).json(data);
   } catch (error) {
     return res.status(500).json({ error: "Internal Server Error" });

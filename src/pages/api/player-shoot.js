@@ -28,13 +28,20 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({ direction }),
     });
-    const data = await upstream.json().catch(() => null);
+    const text = await upstream.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (_) {}
     if (!upstream.ok) {
+      const message =
+        (data && (data.error || data.message)) || text || "Shoot failed";
       return res
         .status(upstream.status || 500)
-        .json({ error: data?.error || "Shoot failed", details: data });
+        .json({ error: message, details: data || text });
     }
-    return res.status(200).json(data);
+    if (!text) return res.status(200).json({ ok: true });
+    return res.status(200).json(data || {});
   } catch (error) {
     return res.status(500).json({ error: "Internal Server Error" });
   }

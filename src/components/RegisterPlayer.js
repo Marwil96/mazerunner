@@ -59,6 +59,7 @@ export default function RegisterPlayer() {
             "mazePlayer",
             JSON.stringify({ id: data.id, token: data.token, name: data.name })
           );
+          window.dispatchEvent(new Event("maze:player-updated"));
         } catch {}
       } else {
         setErrorMessage("Unexpected response from server");

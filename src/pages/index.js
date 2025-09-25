@@ -4,6 +4,7 @@ import RegisterPlayer from "@/components/RegisterPlayer";
 import CreateGame from "@/components/CreateGame";
 import PlayerStatusGrid from "@/components/PlayerStatusGrid";
 import PlayerControls from "@/components/PlayerControls";
+import GameControls from "@/components/GameControls";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,6 +24,7 @@ export default function Home() {
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start w-full max-w-[560px]">
         <h1 className="text-2xl font-semibold">mazerunner</h1>
         <CreateGame />
+        <GameControls />
         <RegisterPlayer />
         <PlayerStatusGrid />
         <PlayerControls />
