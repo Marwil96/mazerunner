@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
 import RegisterPlayer from "@/components/RegisterPlayer";
 import CreateGame from "@/components/CreateGame";
+import PlayerStatusGrid from "@/components/PlayerStatusGrid";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,6 +23,7 @@ export default function Home() {
         <h1 className="text-2xl font-semibold">mazerunner</h1>
         <CreateGame />
         <RegisterPlayer />
+        <PlayerStatusGrid />
       </main>
     </div>
   );
