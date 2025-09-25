@@ -98,9 +98,10 @@ export default function PlayerStatusGrid() {
       const pX = p?.pos?.x ?? p?.pos?.X;
       const pY = p?.pos?.y ?? p?.pos?.Y;
       if (typeof pX !== "number" || typeof pY !== "number") continue;
-      const relX = pX - myX; // +x right
-      const relY = pY - myY; // +y down
-      const rr = centerRowRaw + relY;
+      const relX = pX - myX; // +x right (east)
+      const relY = pY - myY; // +y ??? depends on world; flip to match matrix rows
+      // Flip vertical so positive world Y maps upward in matrix (row index decreases)
+      const rr = centerRowRaw - relY;
       const cc = centerColRaw + relX;
       if (rr < 0 || rr >= height || cc < 0 || cc >= width) continue;
       // raw(rr,cc) -> rotated(row,col)
