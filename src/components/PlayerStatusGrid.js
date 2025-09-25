@@ -73,16 +73,46 @@ export default function PlayerStatusGrid() {
     };
   }, [isRunning, gameId, token]);
 
-  const grid = useMemo(() => {
+  const { grid, playersMap } = useMemo(() => {
     const raw = Array.isArray(status?.maze) ? status.maze : null;
-    if (!raw || !Array.isArray(raw[0])) return raw;
+    if (!raw || !Array.isArray(raw[0]))
+      return { grid: raw, playersMap: new Map() };
     const height = raw.length;
     const width = raw[0].length;
     // Rotate 90° counterclockwise so north maps to up visually
     const rotated = Array.from({ length: width }, (_, r) =>
       Array.from({ length: height }, (_, c) => raw[c][width - 1 - r])
     );
-    return rotated;
+
+    // Build overlay of other players in rotated coordinates
+    const players = Array.isArray(status?.players) ? status.players : [];
+    const myX = status?.pos?.x ?? status?.pos?.X ?? 0;
+    const myY = status?.pos?.y ?? status?.pos?.Y ?? 0;
+    const selfId = status?.id;
+    const centerRowRaw = Math.floor(height / 2);
+    const centerColRaw = Math.floor(width / 2);
+
+    const map = new Map();
+    for (const p of players) {
+      if (selfId != null && p?.id === selfId) continue;
+      const pX = p?.pos?.x ?? p?.pos?.X;
+      const pY = p?.pos?.y ?? p?.pos?.Y;
+      if (typeof pX !== "number" || typeof pY !== "number") continue;
+      const relX = pX - myX; // +x right
+      const relY = pY - myY; // +y down
+      const rr = centerRowRaw + relY;
+      const cc = centerColRaw + relX;
+      if (rr < 0 || rr >= height || cc < 0 || cc >= width) continue;
+      // raw(rr,cc) -> rotated(row,col)
+      const rotRow = width - 1 - cc;
+      const rotCol = rr;
+      const key = `${rotRow}-${rotCol}`;
+      const existing = map.get(key) || [];
+      existing.push(p);
+      map.set(key, existing);
+    }
+
+    return { grid: rotated, playersMap: map };
   }, [status]);
 
   const colorForTile = (value) => {
@@ -164,17 +194,35 @@ export default function PlayerStatusGrid() {
             role="grid"
           >
             {grid.map((row, rowIndex) =>
-              row.map((cell, colIndex) => (
-                <div
-                  key={`${rowIndex}-${colIndex}`}
-                  role="gridcell"
-                  aria-label={`r${rowIndex} c${colIndex} v${cell}`}
-                  className={`aspect-square ${colorForTile(
-                    cell
-                  )} border border-zinc-200 dark:border-zinc-800`}
-                  tabIndex={0}
-                />
-              ))
+              row.map((cell, colIndex) => {
+                const key = `${rowIndex}-${colIndex}`;
+                const others = playersMap.get(key);
+                const hasOthers = Array.isArray(others) && others.length > 0;
+                const firstColor = hasOthers
+                  ? others.find((p) => p?.styles?.color)?.styles?.color
+                  : undefined;
+                return (
+                  <div
+                    key={key}
+                    role="gridcell"
+                    aria-label={`r${rowIndex} c${colIndex} v${cell}${
+                      hasOthers ? ` players:${others.length}` : ""
+                    }`}
+                    className={`relative aspect-square ${colorForTile(
+                      cell
+                    )} border border-zinc-200 dark:border-zinc-800`}
+                    tabIndex={0}
+                  >
+                    {hasOthers && (
+                      <span
+                        className="absolute inset-1 rounded-full border border-white/60"
+                        style={{ backgroundColor: firstColor || "#38bdf8" }}
+                        aria-label={`players ${others.length}`}
+                      />
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
