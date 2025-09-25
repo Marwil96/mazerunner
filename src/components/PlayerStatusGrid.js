@@ -75,16 +75,28 @@ export default function PlayerStatusGrid() {
     };
   }, [isRunning, gameId, token]);
 
-  const { grid, playersMap } = useMemo(() => {
+  const { grid, playersMap, claimsMap } = useMemo(() => {
     const raw = Array.isArray(status?.maze) ? status.maze : null;
     if (!raw || !Array.isArray(raw[0]))
-      return { grid: raw, playersMap: new Map() };
+      return { grid: raw, playersMap: new Map(), claimsMap: new Map() };
     const height = raw.length;
     const width = raw[0].length;
     // Rotate 90° counterclockwise so north maps to up visually
     const rotated = Array.from({ length: width }, (_, r) =>
       Array.from({ length: height }, (_, c) => raw[c][width - 1 - r])
     );
+
+    // Process claims data (same structure as maze but with player IDs)
+    const claimsRaw = Array.isArray(status?.claims) ? status.claims : null;
+    const claimsRotated =
+      claimsRaw && Array.isArray(claimsRaw[0])
+        ? Array.from({ length: width }, (_, r) =>
+            Array.from(
+              { length: height },
+              (_, c) => claimsRaw[c][width - 1 - r]
+            )
+          )
+        : null;
 
     // Build overlay of other players in rotated coordinates
     const players = Array.isArray(status?.players) ? status.players : [];
@@ -94,7 +106,7 @@ export default function PlayerStatusGrid() {
     const centerRowRaw = Math.floor(height / 2);
     const centerColRaw = Math.floor(width / 2);
 
-    const map = new Map();
+    const playersMap = new Map();
     for (const p of players) {
       if (selfId != null && p?.id === selfId) continue;
       const pX = p?.pos?.x ?? p?.pos?.X;
@@ -110,12 +122,26 @@ export default function PlayerStatusGrid() {
       const rotRow = width - 1 - cc;
       const rotCol = rr;
       const key = `${rotRow}-${rotCol}`;
-      const existing = map.get(key) || [];
+      const existing = playersMap.get(key) || [];
       existing.push(p);
-      map.set(key, existing);
+      playersMap.set(key, existing);
     }
 
-    return { grid: rotated, playersMap: map };
+    // Build claims map from rotated claims data
+    const claimsMap = new Map();
+    if (claimsRotated) {
+      for (let row = 0; row < claimsRotated.length; row++) {
+        for (let col = 0; col < claimsRotated[row].length; col++) {
+          const claimValue = claimsRotated[row][col];
+          if (claimValue && claimValue !== 0) {
+            const key = `${row}-${col}`;
+            claimsMap.set(key, claimValue);
+          }
+        }
+      }
+    }
+
+    return { grid: rotated, playersMap, claimsMap };
   }, [status]);
 
   const colorForTile = (value) => {
@@ -209,19 +235,44 @@ export default function PlayerStatusGrid() {
                   ? playerColor
                   : colorForTile(cell);
 
+                // Check for claims on this tile
+                const claimValue = claimsMap.get(key);
+                const hasClaim = claimValue && claimValue !== 0;
+
+                // Get claim color - try to find the player with this ID
+                let claimColor = null;
+                if (hasClaim) {
+                  const claimPlayer = status?.players?.find(
+                    (p) => p?.id === claimValue
+                  );
+                  claimColor =
+                    claimPlayer?.styles?.color ||
+                    `hsl(${(claimValue * 137.5) % 360}, 70%, 50%)`;
+                }
+
                 return (
                   <div
                     key={key}
                     role="gridcell"
                     aria-label={`r${rowIndex} c${colIndex} v${cell}${
                       hasOthers ? ` players:${others.length}` : ""
-                    }`}
+                    }${hasClaim ? ` claimed:${claimValue}` : ""}`}
                     className={`relative aspect-square border border-zinc-200 dark:border-zinc-800 ${
                       isPlayerTile ? "" : colorForTile(cell)
                     }`}
                     style={isPlayerTile ? { backgroundColor: playerColor } : {}}
                     tabIndex={0}
                   >
+                    {/* Claims overlay - semi-transparent color overlay */}
+                    {hasClaim && !isPlayerTile && (
+                      <div
+                        className="absolute inset-0 opacity-30"
+                        style={{ backgroundColor: claimColor }}
+                        aria-label={`claimed by player ${claimValue}`}
+                      />
+                    )}
+
+                    {/* Other players overlay */}
                     {hasOthers && (
                       <span
                         className="absolute inset-1 rounded-full border border-white/60"
