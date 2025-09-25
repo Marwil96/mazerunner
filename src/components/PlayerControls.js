@@ -34,6 +34,14 @@ export default function PlayerControls() {
     };
   }, []);
 
+  useEffect(() => {
+    // Add global keyboard event listener
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [gameId, token, busy]);
+
   const withReq = async (path, init) => {
     try {
       setBusy(true);
@@ -87,9 +95,76 @@ export default function PlayerControls() {
     });
   };
 
+  const handleKeyDown = (e) => {
+    if (!gameId || !token || busy) return;
+
+    // Prevent default behavior for our handled keys
+    const handledKeys = [
+      "ArrowUp",
+      "ArrowDown",
+      "ArrowLeft",
+      "ArrowRight",
+      "KeyW",
+      "KeyA",
+      "KeyS",
+      "KeyD",
+      "Space",
+    ];
+    if (handledKeys.includes(e.code)) {
+      e.preventDefault();
+    }
+
+    // Arrow keys for movement
+    switch (e.code) {
+      case "ArrowUp":
+        handleMove("north");
+        break;
+      case "ArrowDown":
+        handleMove("south");
+        break;
+      case "ArrowLeft":
+        handleMove("west");
+        break;
+      case "ArrowRight":
+        handleMove("east");
+        break;
+      // WASD for shooting
+      case "KeyW":
+        handleShoot("north");
+        break;
+      case "KeyS":
+        handleShoot("south");
+        break;
+      case "KeyA":
+        handleShoot("west");
+        break;
+      case "KeyD":
+        handleShoot("east");
+        break;
+      // Space for bomb
+      case "Space":
+        handleBomb();
+        break;
+    }
+  };
+
   return (
     <section className="w-full rounded-[12px] border border-zinc-200 dark:border-zinc-800 p-4">
       <h2 className="text-lg font-medium mb-3">Player Controls</h2>
+      <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-900 rounded-md text-sm">
+        <div className="font-medium mb-2">Keyboard Controls:</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          <div>
+            <span className="font-medium">Movement:</span> Arrow keys
+          </div>
+          <div>
+            <span className="font-medium">Shooting:</span> W(↑) A(←) S(↓) D(→)
+          </div>
+          <div>
+            <span className="font-medium">Bomb:</span> Spacebar
+          </div>
+        </div>
+      </div>
       <form
         className="grid gap-3"
         onSubmit={(e) => e.preventDefault()}
