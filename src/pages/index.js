@@ -1,5 +1,7 @@
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
+import RegisterPlayer from "@/components/RegisterPlayer";
+import CreateGame from "@/components/CreateGame";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,8 +18,10 @@ export default function Home() {
     <div
       className={`${geistSans.className} ${geistMono.className} font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20`}
     >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        mazerunner
+      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start w-full max-w-[560px]">
+        <h1 className="text-2xl font-semibold">mazerunner</h1>
+        <CreateGame />
+        <RegisterPlayer />
       </main>
     </div>
   );
