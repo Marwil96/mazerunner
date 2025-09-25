@@ -8,32 +8,24 @@ export default async function handler(req, res) {
   const authHeader =
     req.headers["authorization"] || req.headers["Authorization"];
 
-  if (!gameId) {
-    return res.status(400).json({ error: "Missing gameId" });
-  }
-  if (!authHeader) {
+  if (!gameId) return res.status(400).json({ error: "Missing gameId" });
+  if (!authHeader)
     return res.status(401).json({ error: "Missing Authorization header" });
-  }
 
   try {
     const baseUrl = "https://try-maze-runner.up.railway.app/api/v1";
     const endpoint = `${baseUrl}/game/${encodeURIComponent(
       gameId
-    )}/player/status`;
-
+    )}/player/ability/bomb`;
     const upstream = await fetch(endpoint, {
       method: "GET",
-      headers: {
-        Authorization: authHeader,
-      },
+      headers: { Authorization: authHeader },
     });
-
     const data = await upstream.json().catch(() => null);
     if (!upstream.ok) {
-      return res.status(upstream.status || 500).json({
-        error: data?.error || "Failed to fetch player status",
-        details: data,
-      });
+      return res
+        .status(upstream.status || 500)
+        .json({ error: data?.error || "Bomb failed", details: data });
     }
     return res.status(200).json(data);
   } catch (error) {

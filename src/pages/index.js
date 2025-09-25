@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import RegisterPlayer from "@/components/RegisterPlayer";
 import CreateGame from "@/components/CreateGame";
 import PlayerStatusGrid from "@/components/PlayerStatusGrid";
+import PlayerControls from "@/components/PlayerControls";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,6 +25,7 @@ export default function Home() {
         <CreateGame />
         <RegisterPlayer />
         <PlayerStatusGrid />
+        <PlayerControls />
       </main>
     </div>
   );
