@@ -57,7 +57,12 @@ export default function RegisterPlayer() {
         try {
           window.localStorage.setItem(
             "mazePlayer",
-            JSON.stringify({ id: data.id, token: data.token, name: data.name })
+            JSON.stringify({
+              id: data.id,
+              token: data.token,
+              name: data.name,
+              color,
+            })
           );
           window.dispatchEvent(new Event("maze:player-updated"));
         } catch {}

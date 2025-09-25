@@ -10,6 +10,7 @@ const TILE = {
 export default function PlayerStatusGrid() {
   const [gameId, setGameId] = useState("");
   const [token, setToken] = useState("");
+  const [playerColor, setPlayerColor] = useState("#ff0000");
   const [status, setStatus] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isRunning, setIsRunning] = useState(false);
@@ -21,6 +22,7 @@ export default function PlayerStatusGrid() {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed?.token) setToken(String(parsed.token));
+          if (parsed?.color) setPlayerColor(String(parsed.color));
         }
         const gameSaved = window.localStorage.getItem("mazeGame");
         if (gameSaved) {
@@ -119,7 +121,7 @@ export default function PlayerStatusGrid() {
   const colorForTile = (value) => {
     if (value === TILE.WALL) return "bg-zinc-800";
     if (value === TILE.OOB) return "bg-zinc-400";
-    if (value === TILE.PLAYER) return "bg-green-500";
+    if (value === TILE.PLAYER) return "bg-green-500"; // This will be overridden with playerColor
     return "bg-white"; // floor
   };
 
@@ -202,6 +204,11 @@ export default function PlayerStatusGrid() {
                 const firstColor = hasOthers
                   ? others.find((p) => p?.styles?.color)?.styles?.color
                   : undefined;
+                const isPlayerTile = cell === TILE.PLAYER;
+                const tileColor = isPlayerTile
+                  ? playerColor
+                  : colorForTile(cell);
+
                 return (
                   <div
                     key={key}
@@ -209,9 +216,10 @@ export default function PlayerStatusGrid() {
                     aria-label={`r${rowIndex} c${colIndex} v${cell}${
                       hasOthers ? ` players:${others.length}` : ""
                     }`}
-                    className={`relative aspect-square ${colorForTile(
-                      cell
-                    )} border border-zinc-200 dark:border-zinc-800`}
+                    className={`relative aspect-square border border-zinc-200 dark:border-zinc-800 ${
+                      isPlayerTile ? "" : colorForTile(cell)
+                    }`}
+                    style={isPlayerTile ? { backgroundColor: playerColor } : {}}
                     tabIndex={0}
                   >
                     {hasOthers && (
